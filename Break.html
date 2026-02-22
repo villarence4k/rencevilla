@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Break Tracker - Test Mode</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+  }
+  .controls {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 16px;
+  }
+  select {
+    padding: 10px;
+    font-size: 16px;
+  }
+  #timerDisplay {
+    margin-top: 10px;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  #timerDisplay.overbreak {
+    color: red;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  table, th, td {
+    border: 1px solid #999;
+  }
+  th, td {
+    padding: 8px;
+    text-align: center;
+  }
+  .overbreak {
+    color: red;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>Employee Break Tracker - Test Mode</h1>
+
+<div class="controls">
+  <label for="breakType">Select Break: </label>
+  <select id="breakType">
+    <option value="Break 1">Break 1 (Test 5 sec)</option>
+    <option value="Lunch">Lunch (Test 5 sec)</option>
+    <option value="Break 2">Break 2 (Test 5 sec)</option>
+  </select>
+  <button id="startBtn">Start Break</button>
+  <button id="stopBtn" disabled>Stop Break</button>
+  <p id="timerDisplay">Timer: 00:00:05</p>
+</div>
+
+<table id="breakTable">
+  <thead>
+    <tr>
+      <th>Break Type</th>
+      <th>Start Date & Time</th>
+      <th>End Date & Time</th>
+      <th>Duration</th>
+      <th>Remarks</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Break records appear here -->
+  </tbody>
+</table>
+
+<script>
+const startBtn = document.getElementById('startBtn');
+const stopBtn = document.getElementById('stopBtn');
+const breakTypeSelect = document.getElementById('breakType');
+const timerDisplay = document.getElementById('timerDisplay');
+const tableBody = document.querySelector('#breakTable tbody');
+
+let timerInterval;
+let startTime;
+let selectedBreak;
+let breaksTaken = {};
+let elapsedSeconds = 0;
+const breakDuration = 5; // 5 seconds for testing
+
+function formatTime(seconds) {
+  const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+function formatDateTime(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const sec = String(date.getSeconds()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}:${sec}`;
+}
+
+function updateTimer() {
+  elapsedSeconds++;
+  const remaining = breakDuration - elapsedSeconds;
+  timerDisplay.textContent = `Timer: ${formatTime(Math.abs(remaining))}`;
+  if (remaining < 0) {
+    timerDisplay.classList.add('overbreak');
+  }
+}
+
+startBtn.addEventListener('click', () => {
+  selectedBreak = breakTypeSelect.value;
+  if (breaksTaken[selectedBreak]) {
+    alert(`You have already taken ${selectedBreak} today.`);
+    return;
+  }
+  startTime = new Date();
+  elapsedSeconds = 0;
+  timerDisplay.textContent = `Timer: ${formatTime(breakDuration)}`;
+  timerDisplay.classList.remove('overbreak');
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+
+  timerInterval = setInterval(updateTimer, 1000);
+});
+
+stopBtn.addEventListener('click', () => {
+  clearInterval(timerInterval);
+  const endTime = new Date();
+  const durationSec = Math.round((endTime - startTime) / 1000);
+  const durationStr = formatTime(durationSec);
+  const remarks = durationSec > breakDuration ? 'Overbreak' : '';
+  breaksTaken[selectedBreak] = true;
+
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td>${selectedBreak}</td>
+    <td>${formatDateTime(startTime)}</td>
+    <td>${formatDateTime(endTime)}</td>
+    <td>${durationStr}</td>
+    <td class="${remarks ? 'overbreak' : ''}">${remarks}</td>
+  `;
+  tableBody.appendChild(row);
+
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  timerDisplay.textContent = `Timer: ${formatTime(breakDuration)}`;
+  timerDisplay.classList.remove('overbreak');
+});
+</script>
+
+</body>
+</html>
